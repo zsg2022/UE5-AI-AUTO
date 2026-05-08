@@ -7,6 +7,7 @@
 #include "UE5AIAUTOMaterialEditor.h"
 #include "UE5AIAUTOBlueprintEditor.h"
 #include "UE5AIAUTOCppTools.h"
+#include "UE5AIAUTOAdvancedTools.h"
 #include "Editor.h"
 #include "EditorViewportClient.h"
 #include "Engine/World.h"
@@ -359,6 +360,17 @@ void UUE5AIAUTOEditorSubsystem::RegisterCommandHandlers()
 	CommandExecutor->RegisterHandler(TEXT("set_mass"), [](auto P){return FUE5AIAUTOCppTools::SetMass(P->GetStringField(TEXT("actor_name")),P->GetNumberField(TEXT("mass")));});
 	CommandExecutor->RegisterHandler(TEXT("play_sound"), [](auto P){return FUE5AIAUTOCppTools::PlaySound(P->GetStringField(TEXT("actor_name")),P->GetStringField(TEXT("sound_path")));});
 	CommandExecutor->RegisterHandler(TEXT("find_path"), [](auto P){return FUE5AIAUTOCppTools::FindPathTo(P->GetStringField(TEXT("actor_name")),P->GetNumberField(TEXT("x")),P->GetNumberField(TEXT("y")),P->GetNumberField(TEXT("z")));});
+	CommandExecutor->RegisterHandler(TEXT("create_metasound"), [](auto P){return FUE5AIAUTOAdvancedTools::CreateMetaSoundSource(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("name")));});
+	CommandExecutor->RegisterHandler(TEXT("create_niagara"), [](auto P){return FUE5AIAUTOAdvancedTools::CreateNiagaraSystem(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("name")));});
+	CommandExecutor->RegisterHandler(TEXT("add_emitter"), [](auto P){return FUE5AIAUTOAdvancedTools::AddNiagaraEmitter(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("emitter_path")));});
+	CommandExecutor->RegisterHandler(TEXT("set_niagara_param"), [](auto P){return FUE5AIAUTOAdvancedTools::SetNiagaraParameter(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("param_name")),P->GetNumberField(TEXT("value")));});
+	CommandExecutor->RegisterHandler(TEXT("create_sequence"), [](auto P){return FUE5AIAUTOAdvancedTools::CreateLevelSequence(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("name")));});
+	CommandExecutor->RegisterHandler(TEXT("add_transform_track"), [](auto P){return FUE5AIAUTOAdvancedTools::AddTransformTrack(P->GetStringField(TEXT("seq_path")),P->GetStringField(TEXT("actor_name")));});
+	CommandExecutor->RegisterHandler(TEXT("set_keyframe"), [](auto P){return FUE5AIAUTOAdvancedTools::SetKeyframe(P->GetStringField(TEXT("seq_path")),P->GetStringField(TEXT("actor_name")),P->GetNumberField(TEXT("time")),P->GetNumberField(TEXT("x")),P->GetNumberField(TEXT("y")),P->GetNumberField(TEXT("z")));});
+	CommandExecutor->RegisterHandler(TEXT("create_pcg"), [](auto P){return FUE5AIAUTOAdvancedTools::CreatePCGGraph(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("name")));});
+	CommandExecutor->RegisterHandler(TEXT("copy_asset"), [](auto P){return FUE5AIAUTOAdvancedTools::CopyAsset(P->GetStringField(TEXT("source_path")),P->GetStringField(TEXT("dest_path")));});
+	CommandExecutor->RegisterHandler(TEXT("delete_asset"), [](auto P){return FUE5AIAUTOAdvancedTools::DeleteAsset(P->GetStringField(TEXT("path")));});
+	CommandExecutor->RegisterHandler(TEXT("list_assets"), [](auto P){return FUE5AIAUTOAdvancedTools::ListAssets(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("class_name")));});
 #undef BP_REG
 
 	// --- create_material ---

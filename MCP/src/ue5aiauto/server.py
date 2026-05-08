@@ -197,6 +197,30 @@ async def find_path(actor_name: str, x: float, y: float, z: float) -> dict:
 async def set_viewport_camera(location: dict, rotation: dict = None) -> dict:
     return await send("set_viewport_camera", {"location":location,"rotation":rotation or {"pitch":0,"yaw":0,"roll":0}})
 
+@mcp.tool()
+async def create_niagara(path: str, name: str) -> dict:
+    return await send("create_niagara", {"path":path,"name":name})
+
+@mcp.tool()
+async def create_sequence(path: str, name: str) -> dict:
+    return await send("create_sequence", {"path":path,"name":name})
+
+@mcp.tool()
+async def create_pcg(path: str, name: str) -> dict:
+    return await send("create_pcg", {"path":path,"name":name})
+
+@mcp.tool()
+async def copy_asset(source_path: str, dest_path: str) -> dict:
+    return await send("copy_asset", {"source_path":source_path,"dest_path":dest_path})
+
+@mcp.tool()
+async def delete_asset(path: str) -> dict:
+    return await send("delete_asset", {"path":path})
+
+@mcp.tool()
+async def list_assets(path: str = "/Game", class_name: str = "") -> dict:
+    return await send("list_assets", {"path":path,"class_name":class_name})
+
 async def ensure_connected():
     global _tcp_reader, _tcp_writer
     if _tcp_writer: return True
