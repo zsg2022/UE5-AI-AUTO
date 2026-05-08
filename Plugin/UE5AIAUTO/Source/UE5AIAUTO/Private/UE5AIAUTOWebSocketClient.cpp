@@ -23,6 +23,7 @@ void FUE5AIAUTOWebSocketClient::Disconnect()
 	bShouldRun = false;
 	bConnected = false;
 
+	FScopeLock Lock(&SendLock);
 	if (Socket)
 	{
 		Socket->Close();
@@ -183,6 +184,7 @@ void FUE5AIAUTOWebSocketClient::Stop()
 {
 	bShouldRun = false;
 	bConnected = false;
+	FScopeLock Lock(&SendLock);
 	if (Socket) { Socket->Close(); Socket = nullptr; }
 }
 

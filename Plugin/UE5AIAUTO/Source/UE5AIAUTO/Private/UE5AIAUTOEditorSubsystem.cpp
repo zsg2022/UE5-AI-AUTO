@@ -45,6 +45,8 @@ void UUE5AIAUTOEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		TSharedPtr<FJsonObject> Params = Obj->GetObjectField(TEXT("params"));
 		if (!Params.IsValid()) Params = MakeShareable(new FJsonObject());
 
+		if (!GEditor) { TSharedPtr<FJsonObject> Err = MakeShareable(new FJsonObject()); Err->SetStringField(TEXT("error"), TEXT("Editor not available")); return; }
+
 		TSharedPtr<FJsonObject> Result = CommandExecutor->ExecuteImmediate(Method, Params);
 
 			FString ResultJson;
