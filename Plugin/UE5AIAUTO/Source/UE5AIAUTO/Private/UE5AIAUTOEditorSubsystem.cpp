@@ -6,6 +6,7 @@
 #include "UE5AIAUTOWebSocketClient.h"
 #include "UE5AIAUTOMaterialEditor.h"
 #include "UE5AIAUTOBlueprintEditor.h"
+#include "UE5AIAUTOCppTools.h"
 #include "Editor.h"
 #include "EditorViewportClient.h"
 #include "Engine/World.h"
@@ -347,6 +348,17 @@ void UUE5AIAUTOEditorSubsystem::RegisterCommandHandlers()
 	BP_REG("bp_create_macro", FUE5AIAUTOBlueprintEditor::CreateMacro(P->GetStringField(TEXT("path")), P->GetStringField(TEXT("name"))));
 	BP_REG("bp_remove_macro", FUE5AIAUTOBlueprintEditor::RemoveMacro(P->GetStringField(TEXT("path")), P->GetStringField(TEXT("name"))));
 	BP_REG("bp_remove_event_dispatcher", FUE5AIAUTOBlueprintEditor::RemoveEventDispatcher(P->GetStringField(TEXT("path")), P->GetStringField(TEXT("name"))));
+	CommandExecutor->RegisterHandler(TEXT("bt_create"), [](auto P){return FUE5AIAUTOCppTools::CreateBehaviorTree(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("name")));});
+	CommandExecutor->RegisterHandler(TEXT("create_blackboard"), [](auto P){return FUE5AIAUTOCppTools::CreateBlackboard(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("name")));});
+	CommandExecutor->RegisterHandler(TEXT("add_bb_key"), [](auto P){return FUE5AIAUTOCppTools::AddBlackboardKey(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("key_name")),P->GetStringField(TEXT("key_type")));});
+	CommandExecutor->RegisterHandler(TEXT("create_widget"), [](auto P){return FUE5AIAUTOCppTools::CreateWidgetBlueprint(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("name")));});
+	CommandExecutor->RegisterHandler(TEXT("add_widget_to_canvas"), [](auto P){return FUE5AIAUTOCppTools::AddWidgetToCanvas(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("widget_class")),P->GetStringField(TEXT("name")));});
+	CommandExecutor->RegisterHandler(TEXT("add_action_mapping"), [](auto P){return FUE5AIAUTOCppTools::AddActionMapping(P->GetStringField(TEXT("action_name")),P->GetStringField(TEXT("key")));});
+	CommandExecutor->RegisterHandler(TEXT("add_axis_mapping"), [](auto P){return FUE5AIAUTOCppTools::AddAxisMapping(P->GetStringField(TEXT("axis_name")),P->GetStringField(TEXT("key")),P->GetNumberField(TEXT("scale")));});
+	CommandExecutor->RegisterHandler(TEXT("enable_physics"), [](auto P){return FUE5AIAUTOCppTools::EnablePhysics(P->GetStringField(TEXT("actor_name")),P->GetBoolField(TEXT("enable")));});
+	CommandExecutor->RegisterHandler(TEXT("set_mass"), [](auto P){return FUE5AIAUTOCppTools::SetMass(P->GetStringField(TEXT("actor_name")),P->GetNumberField(TEXT("mass")));});
+	CommandExecutor->RegisterHandler(TEXT("play_sound"), [](auto P){return FUE5AIAUTOCppTools::PlaySound(P->GetStringField(TEXT("actor_name")),P->GetStringField(TEXT("sound_path")));});
+	CommandExecutor->RegisterHandler(TEXT("find_path"), [](auto P){return FUE5AIAUTOCppTools::FindPathTo(P->GetStringField(TEXT("actor_name")),P->GetNumberField(TEXT("x")),P->GetNumberField(TEXT("y")),P->GetNumberField(TEXT("z")));});
 #undef BP_REG
 
 	// --- create_material ---

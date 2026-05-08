@@ -19,14 +19,13 @@ public class UE5AIAUTO : ModuleRules
 			"EditorSubsystem",
 			"UnrealEd",
 			"ImageWrapper",
-			"SlateCore"
+			"SlateCore", "AIModule", "GameplayTasks", "NavigationSystem", "UMG", "InputCore"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
 			"Slate",
 				"BlueprintGraph",
 				"KismetCompiler",
-				"Kismet"
 		});
 	}
 }
