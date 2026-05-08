@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+Plugin/UE5AIAUTO/Intermediate/
+Plugin/UE5AIAUTO/Binaries/
+MCP/bridge.err.log
+MCP/bridge.out.log
+.DS_Store
+*.swp

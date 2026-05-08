@@ -1,0 +1,239 @@
+"""UE5-AI-AUTO MCP Server - Claude Code integration."""
+import argparse, asyncio, json, logging, os, uuid
+from fastmcp import FastMCP
+
+logger = logging.getLogger("ue5aiauto.server")
+mcp = FastMCP("UE5-AI-AUTO")
+
+_tcp_reader = None; _tcp_writer = None; _tcp_lock = asyncio.Lock(); _pending = {}
+
+@mcp.tool()
+async def ping() -> str:
+    r = await send("ping"); return f"pong - {r.get('status',r)}"
+
+@mcp.tool()
+async def create_actor(class_name: str, location: dict = None, rotation: dict = None, scale: dict = None) -> dict:
+    return await send("create_actor", {"class_name": class_name, "location": location or {"x":0,"y":0,"z":100}, "rotation": rotation or {"pitch":0,"yaw":0,"roll":0}, "scale": scale or {"x":1,"y":1,"z":1}})
+
+@mcp.tool()
+async def query_scene(filter_class: str = "") -> dict:
+    return await send("query_scene", {"filter_class": filter_class})
+
+@mcp.tool()
+async def delete_actor(actor_name: str, confirm: bool = False) -> dict:
+    if not confirm: return {"warning": f"About to delete '{actor_name}'. Set confirm=true."}
+    return await send("delete_actor", {"actor_name": actor_name})
+
+@mcp.tool()
+async def screenshot(width: int = 1920, height: int = 1080, quality: int = 85, fmt: str = "jpeg") -> str:
+    r = await send("screenshot", {"width":width,"height":height,"quality":quality,"format":fmt})
+    return str(r)
+
+@mcp.tool()
+async def scan_reflection() -> dict:
+    return await send("scan_reflection", {})
+
+@mcp.tool()
+async def bp_create(path: str, parent_class: str = "Actor") -> dict:
+    return await send("bp_create", {"path":path,"parent_class":parent_class})
+
+@mcp.tool()
+async def bp_list(path: str = "/Game/Blueprints") -> dict:
+    return await send("bp_list", {"path":path})
+
+@mcp.tool()
+async def bp_open(path: str) -> dict:
+    return await send("bp_open", {"path":path})
+
+@mcp.tool()
+async def bp_compile(path: str) -> dict:
+    return await send("bp_compile", {"path":path})
+
+@mcp.tool()
+async def bp_create_node(path: str, graph: str, node_class: str, x: float = 0, y: float = 0, defaults: dict = None) -> dict:
+    return await send("bp_create_node", {"path":path,"graph":graph,"node_class":node_class,"x":x,"y":y,"defaults":defaults or {}})
+
+@mcp.tool()
+async def bp_list_nodes(path: str, graph: str = "EventGraph") -> dict:
+    return await send("bp_list_nodes", {"path":path,"graph":graph})
+
+@mcp.tool()
+async def bp_connect_pins(path: str, graph: str, src_node: str, src_pin: str, dst_node: str, dst_pin: str) -> dict:
+    return await send("bp_connect_pins", {"path":path,"graph":graph,"src_node":src_node,"src_pin":src_pin,"dst_node":dst_node,"dst_pin":dst_pin})
+
+@mcp.tool()
+async def bp_create_variable(path: str, name: str, type: str, is_array: bool = False) -> dict:
+    return await send("bp_create_variable", {"path":path,"name":name,"type":type,"is_array":is_array})
+
+@mcp.tool()
+async def bp_add_component(path: str, component_class: str, variable_name: str) -> dict:
+    return await send("bp_add_component", {"path":path,"component_class":component_class,"variable_name":variable_name})
+
+@mcp.tool()
+async def bp_create_function(path: str, name: str) -> dict:
+    return await send("bp_create_function", {"path":path,"name":name,"inputs":[],"outputs":[]})
+
+@mcp.tool()
+async def create_material(asset_path: str, base_color_hex: str = "80D0FFFF", opacity: float = 0.3, roughness: float = 0.1, metallic: float = 0.0, specular: float = 0.5) -> dict:
+    return await send("create_material", {"asset_path":asset_path,"base_color_hex":base_color_hex,"opacity":opacity,"roughness":roughness,"metallic":metallic,"specular":specular})
+
+@mcp.tool()
+async def modify_actor_property(actor_name: str, property_name: str, value) -> dict:
+    return await send("modify_actor_property", {"actor_name":actor_name,"property_name":property_name,"value":value})
+
+@mcp.tool()
+async def set_viewport_camera(location: dict, rotation: dict = None) -> dict:
+    return await send("set_viewport_camera", {"location":location,"rotation":rotation or {"pitch":0,"yaw":0,"roll":0}})
+
+@mcp.tool()
+async def bp_list_variables(path: str) -> dict:
+    return await send("bp_list_variables", {"path":path})
+
+@mcp.tool()
+async def bp_remove_variable(path: str, name: str) -> dict:
+    return await send("bp_remove_variable", {"path":path,"name":name})
+
+@mcp.tool()
+async def bp_set_variable_default(path: str, name: str, value: str) -> dict:
+    return await send("bp_set_variable_default", {"path":path,"name":name,"value":value})
+
+@mcp.tool()
+async def bp_remove_node(path: str, graph: str, node_id: str) -> dict:
+    return await send("bp_remove_node", {"path":path,"graph":graph,"node_id":node_id})
+
+@mcp.tool()
+async def bp_disconnect_pin(path: str, graph: str, node_id: str, pin: str) -> dict:
+    return await send("bp_disconnect_pin", {"path":path,"graph":graph,"node_id":node_id,"pin":pin})
+
+@mcp.tool()
+async def bp_set_pin_default(path: str, graph: str, node_id: str, pin: str, value: str) -> dict:
+    return await send("bp_set_pin_default", {"path":path,"graph":graph,"node_id":node_id,"pin":pin,"value":value})
+
+@mcp.tool()
+async def bp_list_functions(path: str) -> dict:
+    return await send("bp_list_functions", {"path":path})
+
+@mcp.tool()
+async def bp_remove_function(path: str, name: str) -> dict:
+    return await send("bp_remove_function", {"path":path,"name":name})
+
+@mcp.tool()
+async def bp_list_graphs(path: str) -> dict:
+    return await send("bp_list_graphs", {"path":path})
+
+@mcp.tool()
+async def bp_list_components(path: str) -> dict:
+    return await send("bp_list_components", {"path":path})
+
+@mcp.tool()
+async def bp_remove_component(path: str, name: str) -> dict:
+    return await send("bp_remove_component", {"path":path,"name":name})
+
+@mcp.tool()
+async def bp_list_interfaces(path: str) -> dict:
+    return await send("bp_list_interfaces", {"path":path})
+
+@mcp.tool()
+async def bp_add_interface(path: str, interface_class: str) -> dict:
+    return await send("bp_add_interface", {"path":path,"interface_class":interface_class})
+
+@mcp.tool()
+async def bp_remove_interface(path: str, interface_class: str) -> dict:
+    return await send("bp_remove_interface", {"path":path,"interface_class":interface_class})
+
+@mcp.tool()
+async def bp_list_macros(path: str) -> dict:
+    return await send("bp_list_macros", {"path":path})
+
+@mcp.tool()
+async def bp_create_macro(path: str, name: str) -> dict:
+    return await send("bp_create_macro", {"path":path,"name":name})
+
+@mcp.tool()
+async def bp_remove_macro(path: str, name: str) -> dict:
+    return await send("bp_remove_macro", {"path":path,"name":name})
+
+@mcp.tool()
+async def bp_add_event_dispatcher(path: str, name: str) -> dict:
+    return await send("bp_add_event_dispatcher", {"path":path,"name":name})
+
+@mcp.tool()
+async def bp_remove_event_dispatcher(path: str, name: str) -> dict:
+    return await send("bp_remove_event_dispatcher", {"path":path,"name":name})
+
+@mcp.tool()
+async def bp_save(path: str) -> dict:
+    return await send("bp_save", {"path":path})
+
+@mcp.tool()
+async def bp_list_node_classes() -> dict:
+    return await send("bp_list_node_classes", {})
+
+async def ensure_connected():
+    global _tcp_reader, _tcp_writer
+    if _tcp_writer: return True
+    try:
+        _tcp_reader, _tcp_writer = await asyncio.wait_for(asyncio.open_connection('127.0.0.1', 9876), timeout=5)
+        _tcp_writer.write(b'{"type":"mcp"}\n'); await _tcp_writer.drain()
+        await _tcp_reader.readline()
+        asyncio.get_event_loop().create_task(_tcp_read())
+        return True
+    except Exception:
+            logger.debug("Bridge not available"); return False
+
+async def _tcp_read():
+    global _tcp_reader, _tcp_writer, _pending
+    try:
+        while _tcp_reader:
+            line = await _tcp_reader.readline()
+            if not line:
+                break
+            try:
+                msg = json.loads(line.decode("utf-8"))
+            except json.JSONDecodeError:
+                continue
+            rid = str(msg.get("id", ""))
+            fut = _pending.pop(rid, None)
+            if not fut or fut.done():
+                continue
+            if msg.get("error"):
+                fut.set_result({
+                    "error": msg.get("error"),
+                    "error_code": msg.get("error_code", -99),
+                })
+            else:
+                fut.set_result(msg.get("result", msg))
+    except (ConnectionResetError, asyncio.IncompleteReadError, BrokenPipeError):
+        pass
+    finally:
+        for fut in _pending.values():
+            if not fut.done():
+                fut.set_result({"error": "Bridge disconnected", "error_code": -5})
+        _pending.clear()
+        _tcp_reader = None
+        _tcp_writer = None
+
+async def send(method, params=None):
+    global _pending
+    if not await ensure_connected(): return {"error": "Bridge not running", "error_code": -5}
+    async with _tcp_lock:
+        rid = str(uuid.uuid4())
+        f = asyncio.get_event_loop().create_future()
+        _pending[rid] = f
+        _tcp_writer.write((json.dumps({"id":rid,"method":method,"params":params or {}})+"\n").encode())
+        await _tcp_writer.drain()
+    try: return await asyncio.wait_for(f, timeout=30)
+    except asyncio.TimeoutError:
+        _pending.pop(rid,None); return {"error":"Timeout","error_code":-4}
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=9876)
+    parser.add_argument("--log-level", default="INFO")
+    args = parser.parse_args()
+    logging.basicConfig(level=getattr(logging, args.log_level), format="[%(asctime)s] %(message)s", datefmt="%H:%M:%S")
+    logger.info("MCP Server starting...")
+    mcp.run(transport="stdio")
+
+if __name__ == "__main__":
+    main()

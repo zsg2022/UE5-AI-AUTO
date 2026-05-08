@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "UE5-AI-AUTO Plugin",
+	"Description": "让 Claude Code 通过 MCP + WebSocket 操控 UE5 编辑器的全部功能。基于反射系统自动发现 API。",
+	"Category": "Editor",
+	"CreatedBy": "GU5",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "UE5AIAUTO",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}
