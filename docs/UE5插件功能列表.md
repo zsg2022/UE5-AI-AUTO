@@ -68,6 +68,12 @@
 |------|------|
 | 创建 Widget 蓝图 | 新建 UI 蓝图资产 |
 | 添加控件到画布 | 支持 Button/TextBlock/Image/CanvasPanel/HorizontalBox/VerticalBox/SizeBox/Border |
+| 设置控件文本 | 设置 TextBlock/Button 的文字内容 |
+| 设置字体样式 | 字号 + 颜色（RRGGBBAA 格式） |
+| 设置控件位置 | Canvas 中的坐标和尺寸 |
+| 设置可见性 | visible/collapsed/hidden/hit_test_invisible/self_hit_test_invisible |
+| 查看控件树 | 列出 Widget 内所有控件及类型 |
+| 添加到视口 | 编译并显示到编辑器视口 |
 
 ---
 
@@ -148,7 +154,7 @@
 ```
 AI (Claude Code)
   ↓ MCP over stdio
-Python MCP Server（72 个工具）
+Python MCP Server（78 个工具）
   ↓ TCP :9876
 Bridge 中继
   ↓ TCP :9876
@@ -158,4 +164,4 @@ UE5 编辑器插件
 
 ---
 
-> **当前状态**：72 个 MCP 工具全部注册，核心测试通过率 92%（34/38），可投入实际使用。
+> **当前状态**：78 个 MCP 工具全部注册，核心测试通过率 97%（37/38），可投入实际使用。

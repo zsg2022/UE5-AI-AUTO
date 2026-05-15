@@ -8,6 +8,7 @@
 #include "UE5AIAUTOBlueprintEditor.h"
 #include "UE5AIAUTOCppTools.h"
 #include "UE5AIAUTOAdvancedTools.h"
+#include "UE5AIAUTOScreenshotCapture.h"
 #include "Editor.h"
 #include "EditorViewportClient.h"
 #include "Engine/World.h"
@@ -386,6 +387,12 @@ void UUE5AIAUTOEditorSubsystem::RegisterCppToolsHandlers()
 	CommandExecutor->RegisterHandler(TEXT("anim_set_graph_node"), [](auto P){return FUE5AIAUTOCppTools::SetAnimGraphNode(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("node_class")),P->GetNumberField(TEXT("x")),P->GetNumberField(TEXT("y")));});
 	CommandExecutor->RegisterHandler(TEXT("create_widget"), [](auto P){return FUE5AIAUTOCppTools::CreateWidgetBlueprint(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("name")));});
 	CommandExecutor->RegisterHandler(TEXT("add_widget_to_canvas"), [](auto P){return FUE5AIAUTOCppTools::AddWidgetToCanvas(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("widget_class")),P->GetStringField(TEXT("name")));});
+		CommandExecutor->RegisterHandler(TEXT("widget_set_text"), [](auto P){return FUE5AIAUTOCppTools::WidgetSetText(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("widget")),P->GetStringField(TEXT("text")));});
+		CommandExecutor->RegisterHandler(TEXT("widget_set_font"), [](auto P){return FUE5AIAUTOCppTools::WidgetSetFont(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("widget")),P->GetNumberField(TEXT("size")),P->GetStringField(TEXT("color")));});
+		CommandExecutor->RegisterHandler(TEXT("widget_list_tree"), [](auto P){return FUE5AIAUTOCppTools::WidgetListTree(P->GetStringField(TEXT("path")));});
+		CommandExecutor->RegisterHandler(TEXT("widget_set_position"), [](auto P){return FUE5AIAUTOCppTools::WidgetSetPosition(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("widget")),P->GetNumberField(TEXT("x")),P->GetNumberField(TEXT("y")),P->GetNumberField(TEXT("w")),P->GetNumberField(TEXT("h")));});
+		CommandExecutor->RegisterHandler(TEXT("widget_add_to_viewport"), [](auto P){return FUE5AIAUTOCppTools::WidgetAddToViewport(P->GetStringField(TEXT("path")));});
+		CommandExecutor->RegisterHandler(TEXT("widget_set_visibility"), [](auto P){return FUE5AIAUTOCppTools::WidgetSetVisibility(P->GetStringField(TEXT("path")),P->GetStringField(TEXT("widget")),P->GetStringField(TEXT("visible")));});
 	CommandExecutor->RegisterHandler(TEXT("add_action_mapping"), [](auto P){return FUE5AIAUTOCppTools::AddActionMapping(P->GetStringField(TEXT("action_name")),P->GetStringField(TEXT("key")));});
 	CommandExecutor->RegisterHandler(TEXT("add_axis_mapping"), [](auto P){return FUE5AIAUTOCppTools::AddAxisMapping(P->GetStringField(TEXT("axis_name")),P->GetStringField(TEXT("key")),P->GetNumberField(TEXT("scale")));});
 	CommandExecutor->RegisterHandler(TEXT("enable_physics"), [](auto P){return FUE5AIAUTOCppTools::EnablePhysics(P->GetStringField(TEXT("actor_name")),P->GetBoolField(TEXT("enable")));});

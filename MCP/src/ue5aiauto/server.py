@@ -357,6 +357,36 @@ async def add_widget_to_canvas(path: str, widget_class: str, name: str) -> str:
     return await send("add_widget_to_canvas", {"path": path, "widget_class": widget_class, "name": name})
 
 @mcp.tool()
+async def widget_set_text(path: str, widget: str, text: str) -> str:
+    """设置Widget文本(TextBlock/Button)"""
+    return await send("widget_set_text", {"path": path, "widget": widget, "text": text})
+
+@mcp.tool()
+async def widget_set_font(path: str, widget: str, size: int = 0, color: str = "") -> str:
+    """设置TextBlock字体大小和颜色(RRGGBBAA)"""
+    return await send("widget_set_font", {"path": path, "widget": widget, "size": size, "color": color})
+
+@mcp.tool()
+async def widget_list_tree(path: str) -> str:
+    """列出WidgetBlueprint控件树"""
+    return await send("widget_list_tree", {"path": path})
+
+@mcp.tool()
+async def widget_set_position(path: str, widget: str, x: float, y: float, w: float, h: float) -> str:
+    """设置控件在Canvas中的位置和尺寸"""
+    return await send("widget_set_position", {"path": path, "widget": widget, "x": x, "y": y, "w": w, "h": h})
+
+@mcp.tool()
+async def widget_add_to_viewport(path: str) -> str:
+    """编译WidgetBlueprint并添加到编辑器视口"""
+    return await send("widget_add_to_viewport", {"path": path})
+
+@mcp.tool()
+async def widget_set_visibility(path: str, widget: str, visible: str = "visible") -> str:
+    """设置控件可见性(visible/collapsed/hidden/hit_test_invisible/self_hit_test_invisible)"""
+    return await send("widget_set_visibility", {"path": path, "widget": widget, "visible": visible})
+
+@mcp.tool()
 async def add_emitter(path: str, emitter_path: str) -> str:
     """Niagara系统添加Emitter"""
     return await send("add_emitter", {"path": path, "emitter_path": emitter_path})

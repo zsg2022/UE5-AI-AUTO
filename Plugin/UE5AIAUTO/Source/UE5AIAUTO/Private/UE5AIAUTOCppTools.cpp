@@ -236,7 +236,7 @@ TSharedPtr<FJsonObject> FUE5AIAUTOCppTools::AddWidgetToCanvas(const FString& Pat
 	if(!WBP)return MakeJsonErr(FString::Printf(TEXT("WidgetBlueprint not found: %s"),*Path));
 	UWidgetTree* Tree=WBP->WidgetTree;if(!Tree)return MakeJsonErr("No WidgetTree");
 	UCanvasPanel* CP=Cast<UCanvasPanel>(Tree->RootWidget);
-	if(!CP)return MakeJsonErr("CanvasPanel not found in WidgetBlueprint");
+	if(!CP){if(Tree->RootWidget)return MakeJsonErr("Root widget is not a CanvasPanel");CP=Tree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(),FName("CanvasPanel"));Tree->RootWidget=CP;}
 	UClass* WC=nullptr;
 	if(WidgetClass==TEXT("Button"))WC=UButton::StaticClass();
 	else if(WidgetClass==TEXT("TextBlock"))WC=UTextBlock::StaticClass();
@@ -256,6 +256,52 @@ TSharedPtr<FJsonObject> FUE5AIAUTOCppTools::AddWidgetToCanvas(const FString& Pat
 	WBP->Modify();
 	auto J=MakeJsonObj();J->SetStringField(TEXT("status"),TEXT("added"));J->SetStringField(TEXT("widget"),Name);return J;
 }
+
+static UWidget* _FindWidget(UWidgetTree* Tree,const FString& Name){if(!Tree)return nullptr;TArray<UWidget*> WS;Tree->GetAllWidgets(WS);for(UWidget* W:WS)if(W&&W->GetName()==Name)return W;return nullptr;}
+static UWidgetBlueprint* _LoadWBP(const FString& Path){FString Pkg=FPaths::GetPath(Path),A=FPaths::GetBaseFilename(Path);FString O=Pkg+TEXT(".")+A;auto* W=LoadObject<UWidgetBlueprint>(nullptr,*O);if(!W)W=FindObject<UWidgetBlueprint>(nullptr,*O);if(!W)W=LoadObject<UWidgetBlueprint>(nullptr,*Path);return W;}
+
+TSharedPtr<FJsonObject> FUE5AIAUTOCppTools::WidgetSetText(const FString& Path,const FString& WidgetName,const FString& Text){
+	auto* WBP=_LoadWBP(Path);if(!WBP)return MakeJsonErr("WidgetBlueprint not found");if(!WBP->WidgetTree)return MakeJsonErr("No WidgetTree");
+	UWidget* W=_FindWidget(WBP->WidgetTree,WidgetName);if(!W)return MakeJsonErr(FString::Printf(TEXT("Widget not found: %s"),*WidgetName));
+	if(UTextBlock* TB=Cast<UTextBlock>(W)){TB->SetText(FText::FromString(Text));WBP->Modify();auto J=MakeJsonObj();J->SetStringField(TEXT("status"),TEXT("ok"));J->SetStringField(TEXT("widget"),WidgetName);return J;}
+	if(UButton* Btn=Cast<UButton>(W)){UTextBlock* CT=Cast<UTextBlock>(Btn->GetChildAt(0));if(!CT){CT=NewObject<UTextBlock>(Btn,UTextBlock::StaticClass(),FName(*(WidgetName+TEXT("_Label"))));Btn->AddChild(CT);}CT->SetText(FText::FromString(Text));WBP->Modify();auto J=MakeJsonObj();J->SetStringField(TEXT("status"),TEXT("ok"));J->SetStringField(TEXT("widget"),WidgetName);return J;}
+	return MakeJsonErr(FString::Printf(TEXT("SetText not supported for %s — use TextBlock or Button"),*W->GetClass()->GetName()));
+}
+TSharedPtr<FJsonObject> FUE5AIAUTOCppTools::WidgetSetFont(const FString& Path,const FString& WidgetName,int32 FontSize,const FString& ColorHex){
+	auto* WBP=_LoadWBP(Path);if(!WBP)return MakeJsonErr("WidgetBlueprint not found");if(!WBP->WidgetTree)return MakeJsonErr("No WidgetTree");
+	UWidget* W=_FindWidget(WBP->WidgetTree,WidgetName);if(!W)return MakeJsonErr(FString::Printf(TEXT("Widget not found: %s"),*WidgetName));
+	UTextBlock* TB=Cast<UTextBlock>(W);if(!TB)return MakeJsonErr("Font only supported on TextBlock");
+	if(FontSize>0){FSlateFontInfo Font=TB->GetFont();Font.Size=FontSize;TB->SetFont(Font);}
+	if(ColorHex.Len()>=6){int32 R=FParse::HexNumber(*ColorHex.Mid(0,2)),G=FParse::HexNumber(*ColorHex.Mid(2,2)),B=FParse::HexNumber(*ColorHex.Mid(4,2)),A=255;if(ColorHex.Len()>=8)A=FParse::HexNumber(*ColorHex.Mid(6,2));TB->SetColorAndOpacity(FLinearColor(R/255.0f,G/255.0f,B/255.0f,A/255.0f));}
+	WBP->Modify();auto J=MakeJsonObj();J->SetStringField(TEXT("status"),TEXT("ok"));J->SetStringField(TEXT("widget"),WidgetName);return J;
+}
+TSharedPtr<FJsonObject> FUE5AIAUTOCppTools::WidgetListTree(const FString& Path){
+	auto* WBP=_LoadWBP(Path);if(!WBP)return MakeJsonErr("WidgetBlueprint not found");if(!WBP->WidgetTree)return MakeJsonErr("No WidgetTree");
+	auto R=MakeJsonObj();TArray<TSharedPtr<FJsonValue>> Arr;
+	TArray<UWidget*> WS;WBP->WidgetTree->GetAllWidgets(WS);for(UWidget* W:WS){auto J=MakeJsonObj();J->SetStringField(TEXT("name"),W->GetName());J->SetStringField(TEXT("class"),W->GetClass()->GetName());J->SetStringField(TEXT("visible"),W->IsVisible()?TEXT("true"):TEXT("false"));Arr.Add(TSharedPtr<FJsonValue>(new FJsonValueObject(J)));}
+	R->SetArrayField(TEXT("widgets"),Arr);R->SetNumberField(TEXT("count"),Arr.Num());return R;
+}
+TSharedPtr<FJsonObject> FUE5AIAUTOCppTools::WidgetSetPosition(const FString& Path,const FString& WidgetName,double X,double Y,double Width,double Height){
+	auto* WBP=_LoadWBP(Path);if(!WBP)return MakeJsonErr("WidgetBlueprint not found");if(!WBP->WidgetTree)return MakeJsonErr("No WidgetTree");
+	UWidget* W=_FindWidget(WBP->WidgetTree,WidgetName);if(!W)return MakeJsonErr(FString::Printf(TEXT("Widget not found: %s"),*WidgetName));
+	if(UCanvasPanelSlot* CS=Cast<UCanvasPanelSlot>(W->Slot)){CS->SetPosition(FVector2D(X,Y));CS->SetSize(FVector2D(Width,Height));WBP->Modify();auto J=MakeJsonObj();J->SetStringField(TEXT("status"),TEXT("ok"));return J;}
+	return MakeJsonErr("Widget is not in a CanvasPanel slot — use add_widget_to_canvas first");
+}
+TSharedPtr<FJsonObject> FUE5AIAUTOCppTools::WidgetAddToViewport(const FString& Path){
+	auto* WBP=_LoadWBP(Path);if(!WBP)return MakeJsonErr("WidgetBlueprint not found");
+	if(!WBP->GeneratedClass)return MakeJsonErr("WidgetBlueprint not compiled — use bp_compile first");
+	UWorld* World=GEditor?GEditor->GetEditorWorldContext().World():nullptr;if(!World)return MakeJsonErr("No world");
+	UUserWidget* Instance=CreateWidget<UUserWidget>(World,TSubclassOf<UUserWidget>(WBP->GeneratedClass));if(!Instance)return MakeJsonErr("CreateWidget failed");
+	Instance->AddToViewport();auto J=MakeJsonObj();J->SetStringField(TEXT("status"),TEXT("added"));J->SetStringField(TEXT("widget"),Instance->GetName());return J;
+}
+TSharedPtr<FJsonObject> FUE5AIAUTOCppTools::WidgetSetVisibility(const FString& Path,const FString& WidgetName,const FString& Visibility){
+	auto* WBP=_LoadWBP(Path);if(!WBP)return MakeJsonErr("WidgetBlueprint not found");if(!WBP->WidgetTree)return MakeJsonErr("No WidgetTree");
+	UWidget* W=_FindWidget(WBP->WidgetTree,WidgetName);if(!W)return MakeJsonErr(FString::Printf(TEXT("Widget not found: %s"),*WidgetName));
+		ESlateVisibility V;
+		if(Visibility==TEXT("visible"))V=ESlateVisibility::Visible;else if(Visibility==TEXT("collapsed"))V=ESlateVisibility::Collapsed;else if(Visibility==TEXT("hidden"))V=ESlateVisibility::Hidden;else if(Visibility==TEXT("hit_test_invisible"))V=ESlateVisibility::HitTestInvisible;else if(Visibility==TEXT("self_hit_test_invisible"))V=ESlateVisibility::SelfHitTestInvisible;else return MakeJsonErr("Use: visible/collapsed/hidden/hit_test_invisible/self_hit_test_invisible");
+		W->SetVisibility(V);WBP->Modify();auto J=MakeJsonObj();J->SetStringField(TEXT("status"),TEXT("ok"));return J;
+}
+
 // === Animation Blueprint ===
 TSharedPtr<FJsonObject> FUE5AIAUTOCppTools::AddAnimState(const FString& Path,const FString& StateName,double X,double Y){
 	auto* AnimBP=LoadObject<UAnimBlueprint>(nullptr,*Path);if(!AnimBP)return MakeJsonErr("AnimBP not found");

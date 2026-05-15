@@ -22,6 +22,12 @@ public:
 	// === UMG Widget ===
 	static TSharedPtr<FJsonObject> CreateWidgetBlueprint(const FString& Path, const FString& Name);
 	static TSharedPtr<FJsonObject> AddWidgetToCanvas(const FString& Path, const FString& WidgetClass, const FString& Name);
+	static TSharedPtr<FJsonObject> WidgetSetText(const FString& Path, const FString& WidgetName, const FString& Text);
+	static TSharedPtr<FJsonObject> WidgetSetFont(const FString& Path, const FString& WidgetName, int32 FontSize, const FString& ColorHex);
+	static TSharedPtr<FJsonObject> WidgetListTree(const FString& Path);
+	static TSharedPtr<FJsonObject> WidgetSetPosition(const FString& Path, const FString& WidgetName, double X, double Y, double W, double H);
+	static TSharedPtr<FJsonObject> WidgetAddToViewport(const FString& Path);
+	static TSharedPtr<FJsonObject> WidgetSetVisibility(const FString& Path, const FString& WidgetName, const FString& Visibility);
 
 	// === Input Mappings ===
 	static TSharedPtr<FJsonObject> AddActionMapping(const FString& ActionName, const FString& Key);
