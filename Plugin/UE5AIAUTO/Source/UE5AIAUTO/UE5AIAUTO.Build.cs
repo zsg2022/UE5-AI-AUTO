@@ -15,12 +15,15 @@ public class UE5AIAUTO : ModuleRules
 			"ImageWrapper", "SlateCore",
 			"AIModule", "GameplayTasks", "NavigationSystem",
 			"UMG", "InputCore",
-			"Niagara", "LevelSequence", "MovieScene", "PCG"
+			"Niagara", "LevelSequence", "MovieScene", "MovieSceneTracks"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
 			"Slate",
-			"BlueprintGraph", "KismetCompiler", "Kismet"
+			"UMGEditor",
+			"BlueprintGraph", "KismetCompiler", "Kismet",
+			"AnimGraph", "BehaviorTreeEditor", "AIGraph"
 		});
+		PrivateIncludePathModuleNames.Add("BehaviorTreeEditor");
 	}
 }

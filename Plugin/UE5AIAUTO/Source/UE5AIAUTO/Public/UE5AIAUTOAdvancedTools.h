@@ -21,9 +21,9 @@ struct FUE5AIAUTOAdvancedTools
 	static TSharedPtr<FJsonObject> AddTransformTrack(const FString& SeqPath, const FString& ActorName);
 	static TSharedPtr<FJsonObject> SetKeyframe(const FString& SeqPath, const FString& ActorName, double Time, double X, double Y, double Z);
 
-	// === PCG ===
-	static TSharedPtr<FJsonObject> CreatePCGGraph(const FString& Path, const FString& Name);
-	static TSharedPtr<FJsonObject> AddPCGNode(const FString& Path, const FString& NodeClass);
+	// === PCG (disabled - plugin not available in project) ===
+	// static TSharedPtr<FJsonObject> CreatePCGGraph(const FString& Path, const FString& Name);
+	// static TSharedPtr<FJsonObject> AddPCGNode(const FString& Path, const FString& NodeClass);
 
 	// === Landscape ===
 	static TSharedPtr<FJsonObject> CreateLandscape(const FString& LevelName, int32 Size, int32 Sections);

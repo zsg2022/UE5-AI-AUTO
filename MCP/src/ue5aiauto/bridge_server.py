@@ -3,7 +3,7 @@ import asyncio, json, logging
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s", datefmt="%H:%M:%S")
 log = logging.getLogger("bridge")
 
-UE5 = None; PENDING = {}
+UE5 = None; PENDING = {}; UE5_LOCK = asyncio.Lock()
 
 async def handle(reader, writer):
     global UE5
@@ -25,21 +25,25 @@ async def handle(reader, writer):
                 tp = msg.get("type", "")
 
                 if tp == "ue5":
-                    UE5 = writer; log.info("UE5 connected"); continue
+                    async with UE5_LOCK:
+                        UE5 = writer
+                    log.info("UE5 connected"); continue
                 if tp == "mcp":
                     log.info("MCP connected")
                     writer.write(b'{"status":"ok"}\n'); await writer.drain()
                     continue
 
                 if method:
-                    if not UE5:
+                    async with UE5_LOCK:
+                        ue5_writer = UE5
+                    if not ue5_writer:
                         resp = json.dumps({"id": msg.get("id"), "error": "UE5 not connected", "error_code": -5}) + "\n"
                         writer.write(resp.encode()); await writer.drain()
                         continue
                     fut = asyncio.get_event_loop().create_future()
                     PENDING[mid] = fut
                     fwd = json.dumps({"id": msg.get("id"), "method": method, "params": msg.get("params", {})}) + "\n"
-                    UE5.write(fwd.encode()); await UE5.drain()
+                    ue5_writer.write(fwd.encode()); await ue5_writer.drain()
                     try:
                         result = await asyncio.wait_for(fut, timeout=30)
                         resp = json.dumps({"id": msg.get("id"), "result": result}) + "\n"
@@ -54,7 +58,9 @@ async def handle(reader, writer):
         pass
     finally:
         writer.close()
-        if writer is UE5: UE5 = None
+        async with UE5_LOCK:
+            if writer is UE5:
+                UE5 = None
 
 async def main():
     server = await asyncio.start_server(handle, "127.0.0.1", 9876)

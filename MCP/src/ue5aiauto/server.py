@@ -70,12 +70,12 @@ async def bp_add_component(path: str, component_class: str, variable_name: str) 
     return await send("bp_add_component", {"path":path,"component_class":component_class,"variable_name":variable_name})
 
 @mcp.tool()
-async def bp_create_function(path: str, name: str) -> dict:
-    return await send("bp_create_function", {"path":path,"name":name,"inputs":[],"outputs":[]})
+async def bp_create_function(path: str, name: str, inputs: list = None, outputs: list = None) -> dict:
+    return await send("bp_create_function", {"path":path,"name":name,"inputs":inputs or [],"outputs":outputs or []})
 
 @mcp.tool()
-async def create_material(asset_path: str, base_color_hex: str = "80D0FFFF", opacity: float = 0.3, roughness: float = 0.1, metallic: float = 0.0, specular: float = 0.5) -> dict:
-    return await send("create_material", {"asset_path":asset_path,"base_color_hex":base_color_hex,"opacity":opacity,"roughness":roughness,"metallic":metallic,"specular":specular})
+async def create_material(asset_path: str, material_type: str = "opaque", base_color_hex: str = "FFFFFFFF", opacity: float = 1.0, roughness: float = 0.5, metallic: float = 0.0, specular: float = 0.5, emissive_strength: float = 0.0, emissive_hex: str = "000000FF") -> dict:
+    return await send("create_material", {"asset_path":asset_path,"material_type":material_type,"base_color_hex":base_color_hex,"opacity":opacity,"roughness":roughness,"metallic":metallic,"specular":specular,"emissive_strength":emissive_strength,"emissive_hex":emissive_hex})
 
 @mcp.tool()
 async def modify_actor_property(actor_name: str, property_name: str, value) -> dict:
@@ -194,8 +194,14 @@ async def find_path(actor_name: str, x: float, y: float, z: float) -> dict:
     return await send("find_path", {"actor_name":actor_name,"x":x,"y":y,"z":z})
 
 @mcp.tool()
-async def set_viewport_camera(location: dict, rotation: dict = None) -> dict:
-    return await send("set_viewport_camera", {"location":location,"rotation":rotation or {"pitch":0,"yaw":0,"roll":0}})
+async def apply_force(actor_name: str, x: float, y: float, z: float) -> dict:
+    """对Actor施加力"""
+    return await send("apply_force", {"actor_name":actor_name,"x":x,"y":y,"z":z})
+
+@mcp.tool()
+async def stop_sound(actor_name: str) -> dict:
+    """停止Actor上的声音"""
+    return await send("stop_sound", {"actor_name":actor_name})
 
 @mcp.tool()
 async def create_niagara(path: str, name: str) -> dict:
@@ -206,8 +212,14 @@ async def create_sequence(path: str, name: str) -> dict:
     return await send("create_sequence", {"path":path,"name":name})
 
 @mcp.tool()
-async def create_pcg(path: str, name: str) -> dict:
-    return await send("create_pcg", {"path":path,"name":name})
+async def add_actor_to_sequencer(seq_path: str, actor_name: str) -> dict:
+    """Sequencer添加Actor到轨道"""
+    return await send("add_actor_to_sequencer", {"seq_path": seq_path, "actor_name": actor_name})
+
+@mcp.tool()
+# PCG disabled - plugin not available in project
+# async def create_pcg(path: str, name: str) -> dict:
+#     return await send("create_pcg", {"path":path,"name":name})
 
 @mcp.tool()
 async def copy_asset(source_path: str, dest_path: str) -> dict:
@@ -223,7 +235,13 @@ async def list_assets(path: str = "/Game", class_name: str = "") -> dict:
 
 async def ensure_connected():
     global _tcp_reader, _tcp_writer
-    if _tcp_writer: return True
+    if _tcp_writer:
+        try:
+            _tcp_writer.write(b'\n'); await _tcp_writer.drain()
+        except Exception:
+            _tcp_reader = None; _tcp_writer = None
+            return False
+        return True
     try:
         _tcp_reader, _tcp_writer = await asyncio.wait_for(asyncio.open_connection('127.0.0.1', 9876), timeout=5)
         _tcp_writer.write(b'{"type":"mcp"}\n'); await _tcp_writer.drain()
@@ -277,6 +295,101 @@ async def send(method, params=None):
     try: return await asyncio.wait_for(f, timeout=30)
     except asyncio.TimeoutError:
         _pending.pop(rid,None); return {"error":"Timeout","error_code":-4}
+
+@mcp.tool()
+async def bt_create(path: str, name: str) -> str:
+    """创建 BehaviorTree 资产"""
+    return await send("bt_create", {"path": path, "name": name})
+
+@mcp.tool()
+async def bt_add_composite(path: str, parent_id: str, composite_type: str) -> str:
+    """BT添加Select/Sequ/SimpleParallel节点"""
+    return await send("bt_add_composite", {"path": path, "parent_id": parent_id, "composite_type": composite_type})
+
+@mcp.tool()
+async def bt_add_task(path: str, parent_id: str, task_class: str) -> str:
+    """BT添加Task节点"""
+    return await send("bt_add_task", {"path": path, "parent_id": parent_id, "task_class": task_class})
+
+@mcp.tool()
+async def bt_add_decorator(path: str, node_id: str, decorator_class: str) -> str:
+    """BT节点添加Decorator"""
+    return await send("bt_add_decorator", {"path": path, "node_id": node_id, "decorator_class": decorator_class})
+
+@mcp.tool()
+async def bt_add_service(path: str, composite_id: str, service_class: str) -> str:
+    """BT复合节点添加Service"""
+    return await send("bt_add_service", {"path": path, "composite_id": composite_id, "service_class": service_class})
+
+@mcp.tool()
+async def create_blackboard(path: str, name: str) -> str:
+    """创建Blackboard资产"""
+    return await send("create_blackboard", {"path": path, "name": name})
+
+@mcp.tool()
+async def add_bb_key(path: str, key_name: str, key_type: str) -> str:
+    """Blackboard添加Key(Bool/Int/Float/String/Vector等)"""
+    return await send("add_bb_key", {"path": path, "key_name": key_name, "key_type": key_type})
+
+@mcp.tool()
+async def anim_add_state(path: str, state_name: str, x: float, y: float) -> str:
+    """AnimBP动画图添加状态节点"""
+    return await send("anim_add_state", {"path": path, "state_name": state_name, "x": x, "y": y})
+
+@mcp.tool()
+async def anim_add_transition(path: str, from_state: str, to_state: str, condition: str = "") -> str:
+    """AnimBP添加状态转换"""
+    return await send("anim_add_transition", {"path": path, "from_state": from_state, "to_state": to_state, "condition": condition})
+
+@mcp.tool()
+async def anim_set_graph_node(path: str, node_class: str, x: float, y: float) -> str:
+    """AnimBP添加通用动画图节点"""
+    return await send("anim_set_graph_node", {"path": path, "node_class": node_class, "x": x, "y": y})
+
+@mcp.tool()
+async def create_widget(path: str, name: str) -> str:
+    """创建WidgetBlueprint资产"""
+    return await send("create_widget", {"path": path, "name": name})
+
+@mcp.tool()
+async def add_widget_to_canvas(path: str, widget_class: str, name: str) -> str:
+    """WidgetBlueprint Canvas中添加控件"""
+    return await send("add_widget_to_canvas", {"path": path, "widget_class": widget_class, "name": name})
+
+@mcp.tool()
+async def add_emitter(path: str, emitter_path: str) -> str:
+    """Niagara系统添加Emitter"""
+    return await send("add_emitter", {"path": path, "emitter_path": emitter_path})
+
+@mcp.tool()
+async def set_niagara_param(path: str, param_name: str, value: float) -> str:
+    """设置Niagara参数值"""
+    return await send("set_niagara_param", {"path": path, "param_name": param_name, "value": value})
+
+@mcp.tool()
+async def add_transform_track(seq_path: str, actor_name: str) -> str:
+    """Sequencer为Actor添加TransformTrack"""
+    return await send("add_transform_track", {"seq_path": seq_path, "actor_name": actor_name})
+
+@mcp.tool()
+async def set_keyframe(seq_path: str, actor_name: str, time: float, x: float, y: float, z: float) -> str:
+    """Sequencer设置Transform关键帧"""
+    return await send("set_keyframe", {"seq_path": seq_path, "actor_name": actor_name, "time": time, "x": x, "y": y, "z": z})
+
+@mcp.tool()
+async def create_datatable(path: str, name: str, row_struct: str) -> str:
+    """创建DataTable资产"""
+    return await send("create_datatable", {"path": path, "name": name, "row_struct": row_struct})
+
+@mcp.tool()
+async def add_datatable_row(path: str, row_name: str, row_data: dict) -> str:
+    """DataTable添加行数据"""
+    return await send("add_datatable_row", {"path": path, "row_name": row_name, "row_data": row_data})
+
+@mcp.tool()
+async def get_datatable_row(path: str, row_name: str) -> str:
+    """DataTable查询行数据"""
+    return await send("get_datatable_row", {"path": path, "row_name": row_name})
 
 def main():
     parser = argparse.ArgumentParser()

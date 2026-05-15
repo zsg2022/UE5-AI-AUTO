@@ -28,8 +28,16 @@ public:
 private:
 	bool Tick(float DeltaTime);
 	void RegisterCommandHandlers();
+	void RegisterActorHandlers();
+	void RegisterBPHandlers();
+	void RegisterAdvancedHandlers();
+	void RegisterCppToolsHandlers();
+	void RegisterMiscHandlers();
 
 	TUniquePtr<FUE5AIAUTOWebSocketClient> WebSocketClient;
 	TUniquePtr<FUE5AIAUTOCommandExecutor> CommandExecutor;
 	FTSTicker::FDelegateHandle TickDelegateHandle;
+
+	static constexpr const TCHAR* DEFAULT_HOST = TEXT("127.0.0.1");
+	static constexpr int32 DEFAULT_PORT = 9876;
 };

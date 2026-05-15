@@ -72,7 +72,7 @@ uint32 FUE5AIAUTOWebSocketClient::Run()
 		Socket = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_Stream, TEXT("UE5AIAUTO"), false);
 		if (!Socket)
 		{
-			FPlatformProcess::Sleep(1.0f);
+			ReconnectLoop();
 			continue;
 		}
 
@@ -85,7 +85,7 @@ uint32 FUE5AIAUTOWebSocketClient::Run()
 		{
 			ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(Socket);
 			Socket = nullptr;
-			FPlatformProcess::Sleep(1.0f);
+			ReconnectLoop();
 			continue;
 		}
 

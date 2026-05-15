@@ -38,4 +38,9 @@ public:
 
 	// === Navigation ===
 	static TSharedPtr<FJsonObject> FindPathTo(const FString& ActorName, double X, double Y, double Z);
+
+	// === DataTable ===
+	static TSharedPtr<FJsonObject> CreateDataTable(const FString& Path, const FString& Name, const FString& RowStructPath);
+	static TSharedPtr<FJsonObject> AddDataTableRow(const FString& Path, const FString& RowName, const TSharedPtr<FJsonObject>& RowData);
+	static TSharedPtr<FJsonObject> GetDataTableRow(const FString& Path, const FString& RowName);
 };
