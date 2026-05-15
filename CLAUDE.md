@@ -26,7 +26,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 Claude Code (MCP Client)
   ↕ FastMCP stdio
-server.py (Python MCP Server, 72 工具)
+server.py (Python MCP Server, 78 工具)
   ↕ TCP :9876
 bridge_server.py (TCP 中继)
   ↕ TCP :9876
@@ -44,7 +44,7 @@ UE5AIAUTO/                    主仓库（Git）
 │       ├── Public/           头文件（8 个）
 │       └── Private/          实现（10 个 cpp）
 ├── MCP/src/ue5aiauto/        Python MCP Server
-│   ├── server.py             FastMCP 入口（72 工具）
+│   ├── server.py             FastMCP 入口（78 工具）
 │   ├── bridge_server.py      TCP 中继
 │   ├── start_mcp.py          MCP 启动包装脚本
 │   └── tools/                工具分类
@@ -64,7 +64,7 @@ UE5_test/DSPlugin/            UE5 测试项目
 | `FUE5AIAUTOCommandExecutor` | CommandExecutor | `TQueue<Mpsc>` 线程安全命令分发 |
 | `FUE5AIAUTOWebSocketClient` | WebSocketClient | TCP Client（FRunnable 线程） |
 | `FUE5AIAUTOBlueprintEditor` | BlueprintEditor | 蓝图 CRUD + 节点/变量/函数/组件 |
-| `FUE5AIAUTOCppTools` | CppTools | BT/BB/动画/UMG/输入/物理/音频/导航/DataTable |
+| `FUE5AIAUTOCppTools` | CppTools | BT/BB/动画/UMG(8操作)/输入/物理/音频/导航/DataTable |
 | `FUE5AIAUTOAdvancedTools` | AdvancedTools | Niagara/Sequencer/MetaSound/资产管理 |
 | `FUE5AIAUTOReflectionScanner` | ReflectionScanner | 反射系统扫描 + JSON 缓存 |
 | `FUE5AIAUTOScreenshotCapture` | ScreenshotCapture | 视口截图 JPEG/PNG |
@@ -122,6 +122,9 @@ python "K:/UE5 AI Plugin/UE5AIAUTO/MCP/src/ue5aiauto/bridge_server.py" &
 | `MakeShareable(T*)` 弃用（1 参） | 改用 `TSharedPtr<T>(new T(...))` |
 | UMG 头文件移出 `Blueprint/` 子目录 | include 路径去掉 `Blueprint/` 前缀 |
 | `AddEmitterHandle` 加第 3 参数 `FGuid()` | Niagara 调用签名变更 |
+| `UWidgetTree::AllWidgets` → `protected` | 改用 `GetAllWidgets(TArray<UWidget*>&)` |
+| `CreateWidget` 需 `TSubclassOf<>` | 模板参数改为 `TSubclassOf<UUserWidget>(Class)` |
+| `ESlateVisibility` 枚举 | 用 `ESlateVisibility::Visible` 等显式值，禁 int cast |
 
 ### LoadObject 路径格式
 
@@ -130,6 +133,22 @@ python "K:/UE5 AI Plugin/UE5AIAUTO/MCP/src/ue5aiauto/bridge_server.py" &
 错: LoadObject<T>(nullptr, "/Game/AI/BT_TestAI")
 对: LoadObject<T>(nullptr, "/Game/AI.BT_TestAI")
 ```
+
+### LoadObject/FIndObject 通用辅助函数
+
+项目中统一使用以下模式加载动态创建的资产：
+
+```cpp
+// BT 加载: _LoadBT(Path) — 自动尝试 Package.AssetName 格式
+static UBehaviorTree* _LoadBT(const FString& Path);
+// WBP 加载: _LoadWBP(Path) — 同上
+static UWidgetBlueprint* _LoadWBP(const FString& Path);
+// Widget 查找: _FindWidget(Tree, Name) — 递归遍历 UWidgetTree
+static UWidget* _FindWidget(UWidgetTree* Tree, const FString& Name);
+// 通用模式: 先 LoadObject(Package.AssetName) → FindObject → LoadObject(原始Path) 三级回退
+```
+
+> 新增资产加载函数时，**必须**使用点号路径回退模式，不要直接用斜线路径 `LoadObject<T>(nullptr, *Path)`。
 
 ### Python 3.14 兼容
 
